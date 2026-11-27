@@ -15,71 +15,165 @@
 
 name: Publicar en npm
 
-# Se publica en npmjs.com (público) al empujar un tag vX.Y.Z que coincida con la versión de
-# package.json. Versiones con guion (p. ej. v0.2.0-beta.1) salen con el dist-tag "next".
+# Mismo modelo que euruspro/utils: release-on-merge. Se publica SOLO con push a main (tras
+# mergear un PR que ya pasó CI), nunca por tag.
 #
-# Autenticación: Trusted Publishing (OIDC, sin token guardado). npm lo configura en
-# npmjs.com → paquete → Settings → Trusted Publisher (repositorio euruspro/map-comex-component,
-# workflow publish.yml). Si el paquete todavía no existe en npm, la primera versión puede salir con
-# el secret NPM_TOKEN (token granular de publicación); después se borra el secret y queda solo OIDC.
-# Con el repositorio público, npm agrega además la procedencia (provenance) automáticamente.
+# - detect: sin environment. Hay versión nueva si el tag vX.Y.Z de package.json todavía no
+#   existe. Así los push a main que no cambian la versión no quedan esperando aprobación.
+# - publish: solo si detect.release == 'true'. Atado al environment `production`
+#   (aprobación humana + deployment branch policy = main). Publica en npmjs con Trusted
+#   Publishing (OIDC, sin NPM_TOKEN) y, después de publicar, crea el tag y el GitHub Release.
+#
+# Nunca empujar el tag vX.Y.Z a mano: si el tag existe antes del merge, detect responde
+# release=false y la versión no se publica (le pasó a utils 5.1.0).
 on:
   push:
-    tags: ['v*']
-
-permissions:
-  contents: read
-  id-token: write # Trusted Publishing (OIDC) y procedencia
-
-concurrency:
-  group: publish-${{ github.ref }}
-  cancel-in-progress: false
+    branches: [main]
 
 jobs:
-  publish:
-    name: Publicar paquete
+  detect:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      release: ${{ steps.ver.outputs.release }}
+      version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
-          node-version: 22
-          cache: npm
-          registry-url: https://registry.npmjs.org
-      # Trusted Publishing requiere npm >= 11.5.1 (Node 22 trae npm 10).
-      - name: npm con Trusted Publishing
-        run: npm install -g npm@11.6.2
-      - run: npm ci
-      - name: El tag coincide con la versión
+          fetch-depth: 0 # historial + tags para detectar la versión nueva
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Detectar versión a publicar
+        id: ver
         run: |
-          version="$(node -p "require('./package.json').version")"
-          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
-            echo "::error::El tag ${GITHUB_REF_NAME} no coincide con package.json (v${version})."
-            exit 1
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $TAG ya existe; no hay versión nueva que publicar."
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Versión nueva detectada: $TAG"
           fi
+
+  publish:
+    needs: detect
+    if: needs.detect.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    # Aprobación humana (required reviewers) + solo main (deployment branch policy).
+    # Se configura en Settings → Environments → production.
+    environment: production
+    concurrency:
+      group: publish-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write # crear el tag y el GitHub Release
+      id-token: write # Trusted Publishing (OIDC) y procedencia (provenance)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted Publishing exige npm >= 11.5.1; se fija la versión (la misma de utils).
+      - name: Actualizar npm
+        run: npm install -g npm@11.21.0
+
+      - run: npm ci
+
       - name: Verificar (lint, tipos, pruebas, licencia)
         run: npm run lint && npm run type-check && npm test && npm run check:license
-      # Se publica el mismo tarball que se empaqueta aquí y se deja su integridad (sha512) en el
-      # resumen del job: los proyectos consumidores pueden validar su package-lock.json contra ella.
+
+      # Segunda barrera, independiente de "files" en package.json: solo dist/** + metadatos.
+      - name: Verificar contenido del tarball
+        run: npm run verify-tarball
+
+      # Se publica el mismo tarball que se empaqueta aquí; su integridad (sha512) queda en el
+      # resumen del job para validar los lockfiles de los consumidores.
       - name: Empaquetar
         id: pack
         run: |
-          npm pack --json > pack.json
-          echo "file=$(node -p "require('./pack.json')[0].filename")" >> "$GITHUB_OUTPUT"
+          npm pack --json > "$RUNNER_TEMP/pack.json"
+          FILE="$(node -p "require(process.env.RUNNER_TEMP + '/pack.json')[0].filename")"
+          INTEGRITY="$(node -p "require(process.env.RUNNER_TEMP + '/pack.json')[0].integrity")"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
           {
-            echo "### ${GITHUB_REF_NAME}"
+            echo "### ${{ needs.detect.outputs.tag }}"
             echo
-            echo "- Tarball: \`$(node -p "require('./pack.json')[0].filename")\`"
-            echo "- Integridad: \`$(node -p "require('./pack.json')[0].integrity")\`"
+            echo "- Tarball: \`$FILE\`"
+            echo "- Integridad: \`$INTEGRITY\`"
           } >> "$GITHUB_STEP_SUMMARY"
-          node -p "'integrity=' + require('./pack.json')[0].integrity"
-      - name: Publicar
+
+      # Público, con OIDC (sin NPM_TOKEN): npm canjea el token de GitHub Actions por uno de
+      # publicación de corta vida. El trusted publisher del paquete en npmjs debe declarar este
+      # repositorio, el archivo publish.yml y el environment production. Con el repositorio
+      # público, npm agrega la procedencia automáticamente.
+      # Idempotente: si la versión ya existe en npmjs, se omite y el job continúa.
+      - name: Publicar en npmjs.org
         run: |
-          case "${GITHUB_REF_NAME}" in
-            *-*) npm publish "${{ steps.pack.outputs.file }}" --access public --tag next --ignore-scripts ;;
-            *) npm publish "${{ steps.pack.outputs.file }}" --access public --ignore-scripts ;;
+          set +e
+          case "${{ needs.detect.outputs.version }}" in
+            *-*) DIST_TAG="next" ;;
+            *) DIST_TAG="latest" ;;
           esac
+          OUTPUT="$(npm publish "${{ steps.pack.outputs.file }}" --ignore-scripts --access public --tag "$DIST_TAG" 2>&1)"
+          CODE=$?
+          echo "$OUTPUT"
+          if [ $CODE -ne 0 ]; then
+            if echo "$OUTPUT" | grep -qiE "previously published|cannot publish over|EPUBLISHCONFLICT|E409|already exists"; then
+              echo "::warning::Versión ya publicada en npmjs.org; se omite."
+              exit 0
+            fi
+            exit $CODE
+          fi
+
+      # Traza del release: tag anotado + GitHub Release sobre el commit de main ya publicado.
+      # Idempotente y tolerante a carreras (re-run, intervención manual).
+      - name: Crear tag y GitHub Release
         env:
-          # Vacío si no existe el secret: entonces npm usa solo OIDC (Trusted Publishing).
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="${{ needs.detect.outputs.tag }}"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::warning::El tag $TAG ya existe en remoto; se omite."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            if ! git push origin "$TAG"; then
+              if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+                echo "::warning::El tag $TAG apareció en remoto (carrera); se tolera."
+              else
+                echo "::error::No se pudo empujar el tag $TAG."
+                exit 1
+              fi
+            fi
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::warning::El GitHub Release $TAG ya existe; se omite."
+          elif ! gh release create "$TAG" --title "$TAG" --generate-notes; then
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "::warning::El GitHub Release $TAG apareció (carrera); se tolera."
+            else
+              echo "::error::No se pudo crear el GitHub Release $TAG."
+              exit 1
+            fi
+          fi
