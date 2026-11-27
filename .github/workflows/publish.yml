@@ -1,14 +1,20 @@
-name: Publicar en GitHub Packages
+name: Publicar en npm
 
-# Se publica al empujar un tag vX.Y.Z que coincida con la versión de package.json.
-# Versiones con guion (p. ej. v0.2.0-beta.1) se publican con el dist-tag "next".
+# Se publica en npmjs.com (público) al empujar un tag vX.Y.Z que coincida con la versión de
+# package.json. Versiones con guion (p. ej. v0.2.0-beta.1) salen con el dist-tag "next".
+#
+# Autenticación: Trusted Publishing (OIDC, sin token guardado). npm lo configura en
+# npmjs.com → paquete → Settings → Trusted Publisher (repositorio euruspro/map-comex-component,
+# workflow publish.yml). Si el paquete todavía no existe en npm, la primera versión puede salir con
+# el secret NPM_TOKEN (token granular de publicación); después se borra el secret y queda solo OIDC.
+# Con el repositorio público, npm agrega además la procedencia (provenance) automáticamente.
 on:
   push:
     tags: ['v*']
 
 permissions:
   contents: read
-  packages: write
+  id-token: write # Trusted Publishing (OIDC) y procedencia
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -25,8 +31,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: https://npm.pkg.github.com
-          scope: '@euruspro'
+          registry-url: https://registry.npmjs.org
+      # Trusted Publishing requiere npm >= 11.5.1 (Node 22 trae npm 10).
+      - name: npm con Trusted Publishing
+        run: npm install -g npm@11.6.2
       - run: npm ci
       - name: El tag coincide con la versión
         run: |
@@ -54,8 +62,9 @@ jobs:
       - name: Publicar
         run: |
           case "${GITHUB_REF_NAME}" in
-            *-*) npm publish "${{ steps.pack.outputs.file }}" --tag next --ignore-scripts ;;
-            *) npm publish "${{ steps.pack.outputs.file }}" --ignore-scripts ;;
+            *-*) npm publish "${{ steps.pack.outputs.file }}" --access public --tag next --ignore-scripts ;;
+            *) npm publish "${{ steps.pack.outputs.file }}" --access public --ignore-scripts ;;
           esac
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Vacío si no existe el secret: entonces npm usa solo OIDC (Trusted Publishing).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

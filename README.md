@@ -10,23 +10,19 @@ Mapa de comercio exterior de EURUS PRO®: Sudamérica (silueta continental, sin 
 
 Peso: Web Component completo 7,2 KB gzip; marcado de una instancia generado en el build 7,5 KB gzip (`npm run size`).
 
-## Instalación (GitHub Packages)
+## Instalación
 
-El paquete es privado de la organización. En el proyecto que lo consume:
+Paquete público en npm, sin tokens:
 
-```ini
-# .npmrc
-@euruspro:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```bash
+npm install --save-exact @euruspro/map-comex-component
 ```
 
 ```bash
-NODE_AUTH_TOKEN=<token con read:packages> npm install --save-exact @euruspro/map-comex-component
+yarn add --exact @euruspro/map-comex-component
 ```
 
-- **Local:** un token clásico de GitHub con `read:packages` en la variable `NODE_AUTH_TOKEN`. Nunca en el repositorio.
-- **GitHub Actions:** `NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` con `permissions: packages: read`, y el repositorio consumidor habilitado en *Package settings → Manage Actions access*.
-- **Otros CI (Cloudflare, Firebase…):** `NODE_AUTH_TOKEN` como secret del build.
+El código es Apache-2.0. La marca EURUS PRO® no está incluida en esa licencia (Apache-2.0, sección 6).
 
 ## Uso
 
@@ -96,4 +92,6 @@ Demo: `npm run build`, servir la raíz del repositorio con cualquier servidor es
 ## Publicar una versión
 
 1. Subir `version` en `package.json` (semver) en un PR y hacer merge a `main`.
-2. Crear el tag `vX.Y.Z` sobre ese commit. El workflow **Publicar en GitHub Packages** verifica que el tag coincida con la versión y publica. Las versiones con guion (`v0.2.0-beta.1`) salen con el dist-tag `next`.
+2. Crear el tag `vX.Y.Z` sobre ese commit. El workflow **Publicar en npm** verifica que el tag coincida con la versión, corre lint, tipos y pruebas, y publica en npmjs.com. Las versiones con guion (`v0.2.0-beta.1`) salen con el dist-tag `next`.
+
+Autenticación: **Trusted Publishing** (OIDC desde GitHub Actions, sin token guardado), configurado en npmjs.com para este repositorio y `publish.yml`. Solo la primera versión, si npm aún no permite configurar el paquete, sale con el secret `NPM_TOKEN`, que después se borra. Con el repositorio público, npm agrega la procedencia (provenance) del build.

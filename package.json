@@ -8,8 +8,17 @@
     "type": "git",
     "url": "git+https://github.com/euruspro/map-comex-component.git"
   },
+  "homepage": "https://github.com/euruspro/map-comex-component#readme",
+  "keywords": [
+    "eurus-pro",
+    "web-component",
+    "map",
+    "south-america",
+    "svg",
+    "animation"
+  ],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "engines": {
     "node": ">=22.12.0"

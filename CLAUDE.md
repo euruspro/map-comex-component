@@ -1,6 +1,6 @@
 # CLAUDE.md — euruspro/map-comex-component
 
-Paquete `@euruspro/map-comex-component` (GitHub Packages): mapa de comercio exterior de EURUS PRO® como núcleo TypeScript sin dependencias + Web Component. Lo usan el sitio (`euruspro/website`, generado en el build) y la app (`euruspro/WebApp-2.0`, login). Detalle de uso en `README.md`.
+Paquete público `@euruspro/map-comex-component` (npmjs.com): mapa de comercio exterior de EURUS PRO® como núcleo TypeScript sin dependencias + Web Component. Lo usan el sitio (`euruspro/website`, generado en el build) y la app (`euruspro/WebApp-2.0`, login). Detalle de uso en `README.md`.
 
 ## Reglas
 
@@ -17,4 +17,5 @@ Paquete `@euruspro/map-comex-component` (GitHub Packages): mapa de comercio exte
 
 - Antes de cerrar: `npm run lint`, `npm run type-check` y `npm test`, sin errores ni warnings.
 - Cambios de API pública: subir la versión según semver y documentarlos en `README.md`.
-- Publicar (tag `vX.Y.Z`) requiere aprobación humana: es un release que consumen el sitio y la app.
+- Publicar (tag `vX.Y.Z`) requiere aprobación humana: es un release público que consumen el sitio y la app, y una versión publicada en npm no se puede reemplazar.
+- Publicación por Trusted Publishing (OIDC, `publish.yml`). No agregar tokens de npm al repositorio ni a los workflows salvo el secret `NPM_TOKEN` de la primera versión.
