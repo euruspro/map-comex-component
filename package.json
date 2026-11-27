@@ -1,0 +1,65 @@
+{
+  "name": "@euruspro/map-comex-component",
+  "version": "0.1.0",
+  "description": "Mapa de comercio exterior de EURUS PRO®: Sudamérica con barcos, aviones y camiones que llegan a puntos de aduana. SVG + CSS sin dependencias, con Web Component.",
+  "license": "Apache-2.0",
+  "author": "EURUS PRO SpA (https://eurus.pro)",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/euruspro/map-comex-component.git"
+  },
+  "homepage": "https://github.com/euruspro/map-comex-component#readme",
+  "keywords": [
+    "eurus-pro",
+    "web-component",
+    "map",
+    "south-america",
+    "svg",
+    "animation"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
+  "sideEffects": [
+    "./dist/define.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./element": {
+      "types": "./dist/element.d.ts",
+      "default": "./dist/element.js"
+    },
+    "./define": {
+      "types": "./dist/define.d.ts",
+      "default": "./dist/define.js"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings=0",
+    "type-check": "npm run build && tsc -p tsconfig.scripts.json",
+    "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
+    "check:license": "node --experimental-strip-types scripts/check-license.ts",
+    "size": "node --experimental-strip-types scripts/report-size.ts",
+    "geometry:build": "node --experimental-strip-types scripts/build-geometry.ts",
+    "prepublishOnly": "npm run lint && npm run type-check && npm test && npm run check:license"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "eslint": "10.15.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.73.0"
+  }
+}

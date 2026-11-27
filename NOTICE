@@ -1,0 +1,35 @@
+@euruspro/map-comex-component
+Copyright 2026 EURUS PRO SpA
+
+Este producto incluye software desarrollado por EURUS PRO SpA (https://eurus.pro),
+distribuido bajo la Apache License, Version 2.0 (archivo LICENSE).
+
+Marcas
+------
+EURUS PRO® y el logotipo de EURUS PRO son marcas de EURUS PRO SpA. La licencia
+Apache 2.0 no concede permiso para usarlas (sección 6), salvo lo necesario para
+describir el origen del software y reproducir este archivo NOTICE.
+
+Componentes y datos de terceros
+-------------------------------
+1. Natural Earth (https://www.naturalearthdata.com), versión 4.1.0, dominio público.
+   La silueta del continente (src/land.ts) se deriva de su capa "land" a escala
+   1:50m: proyectada, recortada y simplificada por scripts/build-geometry.ts.
+
+2. world-atlas 2.0.2 (https://github.com/topojson/world-atlas), licencia ISC.
+   Redistribución en TopoJSON de los datos de Natural Earth, usada como fuente
+   de la geometría anterior. Su aviso de licencia:
+
+   Copyright 2013-2019 Michael Bostock
+
+   Permission to use, copy, modify, and/or distribute this software for any purpose
+   with or without fee is hereby granted, provided that the above copyright notice
+   and this permission notice appear in all copies.
+
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+   FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+   OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+   TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+   THIS SOFTWARE.
