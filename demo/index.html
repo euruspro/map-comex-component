@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mapa comex · demo</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #001833, #001a5d); font-family: system-ui, sans-serif; color: #fff; }
+      main { width: min(38rem, 92vw); }
+      button { margin-top: 1rem; padding: .6rem 1rem; border-radius: 999px; border: 1px solid #ffffff73; background: none; color: inherit; font: inherit; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <eurus-trade-map labels></eurus-trade-map>
+      <button type="button" id="toggle" aria-pressed="false">Pausar animación</button>
+    </main>
+    <script type="module">
+      import '../dist/define.js';
+      const map = document.querySelector('eurus-trade-map');
+      const toggle = document.getElementById('toggle');
+      toggle.addEventListener('click', () => {
+        map.paused = !map.paused;
+        toggle.setAttribute('aria-pressed', String(map.paused));
+        toggle.textContent = map.paused ? 'Reanudar animación' : 'Pausar animación';
+      });
+    </script>
+  </body>
+</html>

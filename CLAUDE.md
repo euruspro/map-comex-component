@@ -1,0 +1,20 @@
+# CLAUDE.md — euruspro/map-comex-component
+
+Paquete `@euruspro/map-comex-component` (GitHub Packages): mapa de comercio exterior de EURUS PRO® como núcleo TypeScript sin dependencias + Web Component. Lo usan el sitio (`euruspro/website`, generado en el build) y la app (`euruspro/WebApp-2.0`, login). Detalle de uso en `README.md`.
+
+## Reglas
+
+- **Sin dependencias de runtime.** Solo `devDependencies`, con versiones exactas.
+- **Rendimiento:** lo que se mueve son elementos HTML animados solo con `transform` y `opacity` (compuestos en GPU). Nada de animaciones dentro del SVG ni de propiedades que repinten (`stroke-dashoffset`, `filter`, colores). Medir antes y después con `npm run size` y una prueba de CPU.
+- **CSP estricta:** sin atributos `style` ni scripts inline en el marcado generado (hay prueba).
+- **Accesibilidad:** decorativo (`aria-hidden`); respeta `prefers-reduced-motion`; siempre pausable.
+- **Contenido:** la red de `src/network.ts` es ilustrativa. Nunca datos de operaciones ni de clientes. Los textos de estado van solo en Chile y Colombia, con la terminología validada por Producto.
+- **Colores:** solo los de marca como valores por defecto, siempre sobrescribibles con `--tm-*`.
+- **ESM con extensión `.js` en los imports** (NodeNext). `src/projection.ts` no importa nada: lo usa también el generador de geometría.
+- Identificadores en inglés y camelCase; comentarios y documentación en español neutral. Prohibido `any` sin justificación.
+
+## Flujo
+
+- Antes de cerrar: `npm run lint`, `npm run type-check` y `npm test`, sin errores ni warnings.
+- Cambios de API pública: subir la versión según semver y documentarlos en `README.md`.
+- Publicar (tag `vX.Y.Z`) requiere aprobación humana: es un release que consumen el sitio y la app.

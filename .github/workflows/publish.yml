@@ -1,0 +1,45 @@
+name: Publicar en GitHub Packages
+
+# Se publica al empujar un tag vX.Y.Z que coincida con la versión de package.json.
+# Versiones con guion (p. ej. v0.2.0-beta.1) se publican con el dist-tag "next".
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publicar paquete
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@euruspro'
+      - run: npm ci
+      - name: El tag coincide con la versión
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::El tag ${GITHUB_REF_NAME} no coincide con package.json (v${version})."
+            exit 1
+          fi
+      - name: Publicar
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            *-*) npm publish --tag next ;;
+            *) npm publish ;;
+          esac
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
