@@ -103,6 +103,34 @@ describe('renderTradeMap', () => {
     assert.throws(() => renderTradeMap({ idPrefix: '1x' }), /idPrefix inválido/);
   });
 
+  it('valida en tiempo de ejecución los campos que van al marcado (sin inyección de atributos)', () => {
+    const base = tradeRoutes[0] as TradeRoute;
+    const forge = (patch: Record<string, unknown>): TradeRoute => ({ ...base, ...patch }) as unknown as TradeRoute;
+    assert.throws(() => renderTradeMap({ routes: [forge({ mode: 'air" onmouseover="alert(1)' })] }), /mode inválido/);
+    assert.throws(() => renderTradeMap({ routes: [forge({ direction: 'x' })] }), /direction inválido/);
+    assert.throws(() => renderTradeMap({ routes: [forge({ priority: '1" onclick="x' })] }), /priority inválida/);
+    assert.throws(() => renderTradeMap({ routes: [forge({ waypoints: [[Number.NaN, 0]] })] }), /coordenadas inválidas/);
+    assert.throws(() => renderTradeMap({ routes: [forge({ status: 42 })] }), /status inválido/);
+    const node = customsNodes[0] as (typeof customsNodes)[number];
+    assert.throws(() => renderTradeMap({ nodes: [{ ...node, labelSide: 'up' } as never], routes: [base] }), /labelSide inválido/);
+  });
+
+  it('rechaza ids de ruta o de nodo repetidos', () => {
+    const base = tradeRoutes[0] as TradeRoute;
+    assert.throws(() => renderTradeMap({ routes: [base, { ...base }] }), /id de ruta repetido/);
+    const node = customsNodes[0] as (typeof customsNodes)[number];
+    assert.throws(() => renderTradeMap({ nodes: [node, { ...node }] }), /id de nodo repetido/);
+  });
+
+  it('las rutas aéreas respetan las escalas intermedias', () => {
+    const base = tradeRoutes.find((route) => route.mode === 'air') as TradeRoute;
+    const direct = renderTradeMap({ routes: [{ ...base, waypoints: [[-80.3, 27]] }] }).html;
+    const withStop = renderTradeMap({ routes: [{ ...base, waypoints: [[-80.3, 27], [-79.5, 9]] }] }).html;
+    const curves = (html: string): number => (html.match(/class="tm-route tm-route--air"[^>]*d="([^"]+)"/)?.[1]?.match(/C/g) ?? []).length;
+    assert.equal(curves(direct), 1);
+    assert.equal(curves(withStop), 2);
+  });
+
   it('los estilos base respetan reduced-motion y la pausa', () => {
     assert.match(tradeMapStyles, /prefers-reduced-motion:no-preference/);
     assert.match(tradeMapStyles, /\.tm-paused \.tm-flow>\*/);

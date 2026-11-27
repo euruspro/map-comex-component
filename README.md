@@ -8,7 +8,7 @@ Mapa de comercio exterior de EURUS PRO®: Sudamérica (silueta continental, sin 
 - **CSP estricta.** Sin atributos `style` ni scripts inline; el Web Component usa `adoptedStyleSheets`.
 - **Responsive.** El alto sale del ancho (5:6). Escenario de menos de 32rem: sin textos de estado. De menos de 30rem: fijo, sin vehículos.
 
-Peso: Web Component completo 7,8 KB gzip (incluye el aviso de licencia, que se conserva al minificar); marcado de una instancia generado en el build 7,5 KB gzip (`npm run size`).
+Peso: Web Component completo 8,1 KB gzip (incluye el aviso de licencia, que se conserva al minificar); marcado de una instancia generado en el build 7,5 KB gzip (`npm run size`).
 
 ## Instalación
 

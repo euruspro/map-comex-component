@@ -32,7 +32,7 @@ import { buildGeometry, flightArc, pointAtFraction, smoothThrough, toPathData, t
 import { checkGlyph, vehicleGlyphs } from './icons.js';
 import { landPath } from './land.js';
 import { customsNodes, tradeRoutes, type CustomsNode, type TradeRoute, type TransportMode } from './network.js';
-import { project, VIEW_HEIGHT, VIEW_WIDTH, type Point } from './projection.js';
+import { project, VIEW_HEIGHT, VIEW_WIDTH, type LonLat, type Point } from './projection.js';
 
 export interface TradeMapOptions {
   /** Prefijo de ids, keyframes y rutas. Distinto por instancia si hay más de un mapa en el mismo documento. */
@@ -96,18 +96,67 @@ interface ResolvedRoute {
   readonly delaySeconds: number;
 }
 
+const TRANSPORT_MODES: ReadonlySet<unknown> = new Set<TransportMode>(['sea', 'air', 'land']);
+const FLOW_DIRECTIONS: ReadonlySet<unknown> = new Set(['import', 'export']);
+const PRIORITIES: ReadonlySet<unknown> = new Set([1, 2]);
+const LABEL_SIDES: ReadonlySet<unknown> = new Set(['left', 'right']);
+
+function isLonLat(value: unknown): value is LonLat {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate)) &&
+    Math.abs(value[0] as number) <= 180 &&
+    Math.abs(value[1] as number) <= 90
+  );
+}
+
+/**
+ * Valida en tiempo de ejecución lo que va al marcado o a la geometría: los tipos de TypeScript no
+ * protegen a quien llama desde JavaScript ni datos que llegan de fuera (p. ej. un JSON).
+ */
+function validateNodes(nodes: readonly CustomsNode[]): void {
+  const seen = new Set<string>();
+  for (const node of nodes) {
+    if (typeof node.id !== 'string' || !ID_PATTERN.test(node.id)) throw new Error(`tradeMap: id de nodo inválido "${String(node.id)}".`);
+    if (seen.has(node.id)) throw new Error(`tradeMap: id de nodo repetido "${node.id}".`);
+    seen.add(node.id);
+    if (!isLonLat(node.at)) throw new Error(`tradeMap: el nodo "${node.id}" tiene coordenadas inválidas.`);
+    if (!LABEL_SIDES.has(node.labelSide)) throw new Error(`tradeMap: el nodo "${node.id}" tiene labelSide inválido.`);
+  }
+}
+
+function validateRoutes(routes: readonly TradeRoute[]): void {
+  const seen = new Set<string>();
+  for (const route of routes) {
+    if (typeof route.id !== 'string' || !ID_PATTERN.test(route.id)) throw new Error(`tradeMap: id de ruta inválido "${String(route.id)}".`);
+    // Ids repetidos generarían los mismos data-flow y @keyframes: una ruta se animaría con la geometría de otra.
+    if (seen.has(route.id)) throw new Error(`tradeMap: id de ruta repetido "${route.id}".`);
+    seen.add(route.id);
+    if (!TRANSPORT_MODES.has(route.mode)) throw new Error(`tradeMap: la ruta "${route.id}" tiene mode inválido.`);
+    if (!FLOW_DIRECTIONS.has(route.direction)) throw new Error(`tradeMap: la ruta "${route.id}" tiene direction inválido.`);
+    if (!PRIORITIES.has(route.priority)) throw new Error(`tradeMap: la ruta "${route.id}" tiene priority inválida.`);
+    if (route.status !== undefined && typeof route.status !== 'string') throw new Error(`tradeMap: la ruta "${route.id}" tiene status inválido.`);
+    if (!Array.isArray(route.waypoints) || route.waypoints.length === 0) throw new Error(`tradeMap: la ruta "${route.id}" no tiene recorrido.`);
+    if (!route.waypoints.every(isLonLat)) throw new Error(`tradeMap: la ruta "${route.id}" tiene coordenadas inválidas.`);
+  }
+}
+
 function resolveRoutes(prefix: string, routes: readonly TradeRoute[], nodes: readonly CustomsNode[]): ResolvedRoute[] {
+  validateNodes(nodes);
+  validateRoutes(routes);
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   return routes.map((route, index) => {
-    if (!ID_PATTERN.test(route.id)) throw new Error(`tradeMap: id de ruta inválido "${route.id}".`);
     const node = nodesById.get(route.nodeId);
-    if (node === undefined) throw new Error(`tradeMap: la ruta "${route.id}" apunta a un nodo inexistente (${route.nodeId}).`);
-    if (route.waypoints.length === 0) throw new Error(`tradeMap: la ruta "${route.id}" no tiene recorrido.`);
+    if (node === undefined) throw new Error(`tradeMap: la ruta "${route.id}" apunta a un nodo inexistente (${String(route.nodeId)}).`);
     const nodePoint = project(node.at);
     const waypoints = route.waypoints.map((lonLat) => project(lonLat));
     const points = route.direction === 'import' ? [...waypoints, nodePoint] : [nodePoint, ...waypoints];
+    // Aéreas: un arco por tramo, así se respetan las escalas intermedias.
     const segments =
-      route.mode === 'air' ? flightArc(points[0] as Point, points[points.length - 1] as Point) : smoothThrough(points);
+      route.mode === 'air'
+        ? points.slice(1).flatMap((to, i) => flightArc(points[i] as Point, to))
+        : smoothThrough(points);
     const geometry = buildGeometry(segments);
     const travelSeconds = Math.min(Math.max(geometry.length / SPEED[route.mode], MIN_TRAVEL_SECONDS), MAX_TRAVEL_SECONDS);
     const travelStart = route.direction === 'import' ? 0 : EXPORT_DEPARTURE;
