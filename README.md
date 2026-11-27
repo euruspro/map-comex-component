@@ -6,7 +6,7 @@ Mapa de comercio exterior de EURUS PRO®: Sudamérica (silueta continental, sin 
 - **Rendimiento.** Lo fijo es un SVG que no se anima. Lo que se mueve son elementos HTML animados solo con `transform` y `opacity`, compuestos en GPU: ~0,1 % del hilo principal en desktop (el mismo mapa animado dentro del SVG usaba ~4,8 %).
 - **Accesible.** Decorativo (`aria-hidden`). Se detiene con `prefers-reduced-motion`, se pausa fuera de pantalla y a pedido (WCAG 2.2.2).
 - **CSP estricta.** Sin atributos `style` ni scripts inline; el Web Component usa `adoptedStyleSheets`.
-- **Responsive.** El alto sale del ancho (5:6). Escenario de menos de 36rem: sin textos de estado. De menos de 30rem: fijo, sin vehículos.
+- **Responsive.** El alto sale del ancho (5:6). Escenario de menos de 32rem: sin textos de estado. De menos de 30rem: fijo, sin vehículos.
 
 Peso: Web Component completo 7,2 KB gzip; marcado de una instancia generado en el build 7,5 KB gzip (`npm run size`).
 

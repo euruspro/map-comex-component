@@ -12,7 +12,7 @@
  * - Sin animación con prefers-reduced-motion, con la clase `tm-paused` en el escenario o en un
  *   ancestro, o con `is-offscreen` (fuera de pantalla).
  * - Escenario angosto (< 30rem): fijo, solo continente, rutas principales y nodos (ahorra CPU en
- *   móviles). Entre 30 y 36rem: en movimiento, sin textos de estado (no se leerían).
+ *   móviles). Entre 30 y 32rem: en movimiento, sin textos de estado (no se leerían).
  */
 import { CYCLE_SECONDS } from './render.js';
 import { VIEW_HEIGHT, VIEW_WIDTH } from './projection.js';
@@ -46,6 +46,6 @@ export const tradeMapStyles = `
 .tm-paused .tm-flow>*,.is-offscreen .tm-flow>*{animation-play-state:paused}
 }
 @media (prefers-reduced-motion:reduce){.tm-motion{display:none}}
-@container tm (width<36rem){.tm-chip{display:none}}
+@container tm (width<32rem){.tm-chip{display:none}}
 @container tm (width<30rem){.tm-motion,.tm-route[data-priority="2"]{display:none}}
 `;
