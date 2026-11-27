@@ -35,11 +35,27 @@ jobs:
             echo "::error::El tag ${GITHUB_REF_NAME} no coincide con package.json (v${version})."
             exit 1
           fi
+      - name: Verificar (lint, tipos, pruebas)
+        run: npm run lint && npm run type-check && npm test
+      # Se publica el mismo tarball que se empaqueta aquí y se deja su integridad (sha512) en el
+      # resumen del job: los proyectos consumidores pueden validar su package-lock.json contra ella.
+      - name: Empaquetar
+        id: pack
+        run: |
+          npm pack --json > pack.json
+          echo "file=$(node -p "require('./pack.json')[0].filename")" >> "$GITHUB_OUTPUT"
+          {
+            echo "### ${GITHUB_REF_NAME}"
+            echo
+            echo "- Tarball: \`$(node -p "require('./pack.json')[0].filename")\`"
+            echo "- Integridad: \`$(node -p "require('./pack.json')[0].integrity")\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          node -p "'integrity=' + require('./pack.json')[0].integrity"
       - name: Publicar
         run: |
           case "${GITHUB_REF_NAME}" in
-            *-*) npm publish --tag next ;;
-            *) npm publish ;;
+            *-*) npm publish "${{ steps.pack.outputs.file }}" --tag next --ignore-scripts ;;
+            *) npm publish "${{ steps.pack.outputs.file }}" --ignore-scripts ;;
           esac
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
