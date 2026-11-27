@@ -34,5 +34,6 @@ Paquete público `@euruspro/map-comex-component` (npmjs.com): mapa de comercio e
 
 - Antes de cerrar: `npm run lint`, `npm run type-check` y `npm test`, sin errores ni warnings.
 - Cambios de API pública: subir la versión según semver y documentarlos en `README.md`.
-- Publicar (tag `vX.Y.Z`) requiere aprobación humana: es un release público que consumen el sitio y la app, y una versión publicada en npm no se puede reemplazar.
-- Publicación por Trusted Publishing (OIDC, `publish.yml`). No agregar tokens de npm al repositorio ni a los workflows salvo el secret `NPM_TOKEN` de la primera versión.
+- Publicar requiere aprobación humana: es un release público que consumen el sitio y la app, y una versión publicada en npm no se puede reemplazar.
+- Mecanismo de `euruspro/utils` (`publish.yml`): release-on-merge a `main`, aprobación en el environment `production`, Trusted Publishing (OIDC) y tag + GitHub Release creados por el workflow **después** de publicar. Una versión nueva = subir `version` en un PR. **Nunca empujar el tag `vX.Y.Z` a mano** (el workflow no publicaría). Sin tokens de npm en el repositorio ni en los workflows.
+- `npm run verify-tarball`: allowlist del paquete (dist/** + `package.json`, `README.md`, `LICENSE`, `NOTICE`), independiente de `files`. Ampliar `files` obliga a actualizarla.

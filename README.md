@@ -89,10 +89,18 @@ Demo: `npm run build`, servir la raíz del repositorio con cualquier servidor es
 
 ## Publicar una versión
 
-1. Subir `version` en `package.json` (semver) en un PR y hacer merge a `main`.
-2. Crear el tag `vX.Y.Z` sobre ese commit. El workflow **Publicar en npm** verifica que el tag coincida con la versión, corre lint, tipos y pruebas, y publica en npmjs.com. Las versiones con guion (`v0.2.0-beta.1`) salen con el dist-tag `next`.
+Mismo mecanismo que `@euruspro/utils`: **se publica al hacer merge a `main`**, nunca con un tag.
 
-Autenticación: **Trusted Publishing** (OIDC desde GitHub Actions, sin token guardado), configurado en npmjs.com para este repositorio y `publish.yml`. Solo la primera versión, si npm aún no permite configurar el paquete, sale con el secret `NPM_TOKEN`, que después se borra. Con el repositorio público, npm agrega la procedencia (provenance) del build.
+1. Subir `version` en `package.json` (semver) en un PR. CI corre lint, tipos, pruebas, licencia y contenido del tarball.
+2. Merge a `main`. El workflow **Publicar en npm** detecta la versión nueva (no existe aún el tag `vX.Y.Z`) y deja el job `publish` esperando aprobación en el environment `production`.
+3. Al aprobar, vuelve a verificar, publica en npmjs.com con **Trusted Publishing** (OIDC, sin token guardado) y crea el tag y el GitHub Release. Las versiones con guion (`0.2.0-beta.1`) salen con el dist-tag `next`. La integridad del tarball queda en el resumen del job.
+
+**No empujar el tag `vX.Y.Z` a mano:** si existe antes del merge, el workflow entiende que no hay versión nueva y no publica.
+
+Configuración (una vez, en GitHub y npmjs):
+
+- GitHub → *Settings → Environments → `production`*: *required reviewers* y *deployment branch policy* = `main`.
+- npmjs.com → `@euruspro/map-comex-component` → *Settings → Trusted Publisher*: GitHub Actions, repositorio `euruspro/map-comex-component`, workflow `publish.yml`, environment `production`. Con el repositorio público, npm agrega la procedencia (provenance) del build.
 
 ## Licencia
 

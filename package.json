@@ -1,6 +1,6 @@
 {
   "name": "@euruspro/map-comex-component",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mapa de comercio exterior de EURUS PRO®: Sudamérica con barcos, aviones y camiones que llegan a puntos de aduana. SVG + CSS sin dependencias, con Web Component.",
   "license": "Apache-2.0",
   "author": "EURUS PRO SpA (https://eurus.pro)",
@@ -51,6 +51,7 @@
     "type-check": "npm run build && tsc -p tsconfig.scripts.json",
     "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
     "check:license": "node --experimental-strip-types scripts/check-license.ts",
+    "verify-tarball": "node --experimental-strip-types scripts/verify-tarball.ts",
     "size": "node --experimental-strip-types scripts/report-size.ts",
     "geometry:build": "node --experimental-strip-types scripts/build-geometry.ts",
     "prepublishOnly": "npm run lint && npm run type-check && npm test && npm run check:license"
