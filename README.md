@@ -8,7 +8,7 @@ Mapa de comercio exterior de EURUS PRO®: Sudamérica (silueta continental, sin 
 - **CSP estricta.** Sin atributos `style` ni scripts inline; el Web Component usa `adoptedStyleSheets`.
 - **Responsive.** El alto sale del ancho (5:6). Escenario de menos de 32rem: sin textos de estado. De menos de 30rem: fijo, sin vehículos.
 
-Peso: Web Component completo 7,2 KB gzip; marcado de una instancia generado en el build 7,5 KB gzip (`npm run size`).
+Peso: Web Component completo 7,8 KB gzip (incluye el aviso de licencia, que se conserva al minificar); marcado de una instancia generado en el build 7,5 KB gzip (`npm run size`).
 
 ## Instalación
 
@@ -21,8 +21,6 @@ npm install --save-exact @euruspro/map-comex-component
 ```bash
 yarn add --exact @euruspro/map-comex-component
 ```
-
-El código es Apache-2.0. La marca EURUS PRO® no está incluida en esa licencia (Apache-2.0, sección 6).
 
 ## Uso
 
@@ -95,3 +93,12 @@ Demo: `npm run build`, servir la raíz del repositorio con cualquier servidor es
 2. Crear el tag `vX.Y.Z` sobre ese commit. El workflow **Publicar en npm** verifica que el tag coincida con la versión, corre lint, tipos y pruebas, y publica en npmjs.com. Las versiones con guion (`v0.2.0-beta.1`) salen con el dist-tag `next`.
 
 Autenticación: **Trusted Publishing** (OIDC desde GitHub Actions, sin token guardado), configurado en npmjs.com para este repositorio y `publish.yml`. Solo la primera versión, si npm aún no permite configurar el paquete, sale con el secret `NPM_TOKEN`, que después se borra. Con el repositorio público, npm agrega la procedencia (provenance) del build.
+
+## Licencia
+
+Copyright 2026 EURUS PRO SpA. Distribuido bajo la [Apache License 2.0](LICENSE) (`SPDX-License-Identifier: Apache-2.0`).
+
+- Si redistribuyes el paquete o una obra derivada, incluye `LICENSE` y `NOTICE` (sección 4 de la licencia). Los dos van dentro del paquete publicado en npm, y cada archivo de `dist/` conserva su aviso de licencia, también al minificarse (comentarios `/*!`).
+- **Marcas:** EURUS PRO® y su logotipo son marcas de EURUS PRO SpA. La licencia no concede permiso para usarlas (sección 6).
+- **Terceros:** la silueta del continente deriva de Natural Earth 4.1.0 (dominio público), obtenida de world-atlas 2.0.2 (ISC, Copyright 2013-2019 Michael Bostock). Avisos completos en [`NOTICE`](NOTICE).
+- Todo archivo nuevo lleva la cabecera de licencia: `npm run check:license` (corre en CI) lo verifica.

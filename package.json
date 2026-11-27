@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Mapa de comercio exterior de EURUS PRO®: Sudamérica con barcos, aviones y camiones que llegan a puntos de aduana. SVG + CSS sin dependencias, con Web Component.",
   "license": "Apache-2.0",
+  "author": "EURUS PRO SpA (https://eurus.pro)",
   "type": "module",
   "repository": {
     "type": "git",
@@ -24,7 +25,8 @@
     "node": ">=22.12.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "NOTICE"
   ],
   "sideEffects": [
     "./dist/define.js"
@@ -48,9 +50,10 @@
     "lint": "eslint . --max-warnings=0",
     "type-check": "npm run build && tsc -p tsconfig.scripts.json",
     "test": "npm run build && node --experimental-strip-types --test test/*.test.ts",
+    "check:license": "node --experimental-strip-types scripts/check-license.ts",
     "size": "node --experimental-strip-types scripts/report-size.ts",
     "geometry:build": "node --experimental-strip-types scripts/build-geometry.ts",
-    "prepublishOnly": "npm run lint && npm run type-check && npm test"
+    "prepublishOnly": "npm run lint && npm run type-check && npm test && npm run check:license"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
